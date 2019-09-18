@@ -1,0 +1,52 @@
+version: '3.7'
+
+services:
+    nginx:
+        image: qcth/centos-nginx:1.16_1
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./www:/www
+            - ./config/nginx/conf.d:/etc/nginx/conf.d
+            - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+            - ./log/nginx:/var/log/nginx
+        networks:
+            - www-network
+    php:
+        image: qcth/centos-php:7.3.7_redis_nginx
+        volumes:
+            - ./www:/www
+            - ./config/php/php.ini:/usr/local/lib/php.ini
+            - ./config/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
+        networks:
+            - www-network
+    redis:
+        image: redis
+        networks:
+            - www-network
+    redisadmin:
+        image: erikdubbelboer/phpredisadmin
+        ports:
+            - "6379:80"
+        environment:
+           REDIS_1_HOST: "redis"
+           REDIS_1_NAME: "redis"
+        networks:
+            - www-network
+    mariadb:
+        image: mariadb
+        ports:
+            - "3306:3306"
+        environment:
+           MYSQL_ROOT_PASSWORD: "123456"
+        volumes:
+            - ./mysql:/var/lib/mysql
+            - ./config/mysql/my.cnf:/etc/mysql/my.cnf
+            - ./config/mysql/conf.d:/etc/mysql/conf.d
+        networks:
+            - www-network
+
+networks:
+    www-network:
+        driver: bridge
